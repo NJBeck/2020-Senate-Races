@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import math
 from scipy.stats import binom
 
 solidD = 8
@@ -55,25 +54,27 @@ summing over all possible combinations of 15 wins gives us the prob
 of winning exactly 15 seats
 '''
 
-def _distribute(n, raceTotalArray, startArray):
+
+def distribute(n, raceTotalArray, startArray):
     '''
     gives the permutations of arrays with n in every slot given that
     n is also less than the value in raceTotalArray in that slot
-    ex: _distribute(2, [12,8,7,3,2,1,1,1], [0,0,0,3,0,0,0,0]) gives
-    [array([2, 0, 0, 3, 0, 0, 0, 0]), 
+    ex: distribute(2, [12,8,7,3,2,1,1,1], [0,0,0,3,0,0,0,0]) gives
+    [array([2, 0, 0, 3, 0, 0, 0, 0]),
     array([0, 2, 0, 3, 0, 0, 0, 0]), array([0, 0, 2, 3, 0, 0, 0, 0]),
     array([0, 0, 0, 3, 2, 0, 0, 0])]
     '''
     arrays = []
     for i in range(len(startArray)):
         if raceTotalArray[i] >= n:
-            if startArray[i] == 0:               
+            if startArray[i] == 0:
                 tempArray = np.copy(startArray)
                 tempArray[i] = n
                 arrays.append(tempArray)
         else:
             break
     return arrays
+
 
 def find_sums(n, maxSize, maxLen):
     '''
@@ -85,14 +86,12 @@ def find_sums(n, maxSize, maxLen):
     sums = []
     if n <= maxSize:
         sums.append([n])
-
     for i in range(1, n):
         # we iterate through splitting a number into a base and a residual
         # eg 5 can be split into 4 and 1 then 3 and 2
         base = n - i
         # discard those with bases too large to fit in our array
         if base <= maxSize:
-
             # repeat the process of splitting for the residual i
             # we now use a maxSize of base in order to limit repetition
             # e.g. 3 can be split to [2,1] but not [1,2]
@@ -125,7 +124,7 @@ def find_combs(n, raceTotalArray=raceTotals):
     # example of sumCombinations: [[3,2], [3,1,1], [2,2,1], [2,1,1,1]]
     sumsCombinations = find_sums(n, raceTotalArray[0], len(raceTotalArray))
     for comb in sumsCombinations:  # [3,2] then [3,1,1] etc
-        # starts empty but holds the output of _distribute to iterate over
+        # starts empty but holds the output of distribute to iterate over
         # example: distributing the 3 over [0,0,0,0]
         # subject to the constraint [3,2,1,1] is just [3,0,0,0]
         # then 2 gets distributed over that which only gives [3,2,0,0]
@@ -135,7 +134,7 @@ def find_combs(n, raceTotalArray=raceTotals):
             for arr in distributedArrays:
                 # take each array from a distribution then
                 # then distribute the next num then store it in a temp list
-                tempList += _distribute(num, raceTotalArray, arr)
+                tempList += distribute(num, raceTotalArray, arr)
             # after this has been done we replace the distributedArray
             # and distribute the next number
             distributedArrays = tempList
@@ -144,7 +143,9 @@ def find_combs(n, raceTotalArray=raceTotals):
         finalArray += distributedArrays
     return np.unique(np.array(finalArray), axis=0)
 
-def find_prob(n=15, raceTotalArray=raceTotals, raceProbArray=raceProbs, totalSeats=seatTotal):
+
+def find_prob(n=15, raceTotalArray=raceTotals, raceProbArray=raceProbs,
+              totalSeats=seatTotal):
     '''
     as described above the functions above we multiply the binom.pmf()
     of every number in each array in the array from find_combs
@@ -165,7 +166,9 @@ def find_prob(n=15, raceTotalArray=raceTotals, raceProbArray=raceProbs, totalSea
     finalProb += np.sum(np.array(combProbArray))
     return finalProb
 
-def sum_probs(n=15, raceTotalArray=raceTotals, raceProbArray=raceProbs, totalSeats=seatTotal):
+
+def sum_probs(n=15, raceTotalArray=raceTotals,
+              raceProbArray=raceProbs, totalSeats=seatTotal):
     '''
     returns the prob of winning n or more races
     '''
@@ -175,9 +178,12 @@ def sum_probs(n=15, raceTotalArray=raceTotals, raceProbArray=raceProbs, totalSea
     print(f'The probability of Dems winning {n} or more seats is {probSum}')
     return probSum
 
+
 def prob_list(n=15, totalSeats=seatTotal, plot=False, printed=True):
     '''
-    returns a list of tuples containing (seats won, probability)
+    Returns a list of tuples containing (seats won, probability)
+    Also prints the prob of each seat total
+    Optional printing of prob of winning n+ seats and plotting
 
     '''
     probList = []
@@ -187,16 +193,17 @@ def prob_list(n=15, totalSeats=seatTotal, plot=False, printed=True):
         if i >= n:
             probSum += prob
         probList.append((i, prob))
-        if printed == True:
+        if printed:
             print(f'The probability of winning {i} seat(s) is {prob}')
     print(f'The probability of Dems winning {n} or more seats is {probSum}')
-    if plot == True:
+    if plot:
         x, y = zip(*probList)
         plt.bar(x, y)
         plt.xlabel('# of Dem seats won')
         plt.ylabel('probability')
         plt.show()
     return probList
+
 
 def monte_carlo(testN=10000, plot=True, ToWin=15):
     # create a list of the probabilities of a category of races
@@ -232,12 +239,13 @@ def monte_carlo(testN=10000, plot=True, ToWin=15):
     # picking out the number of instances where successes > 15 is our answer
     successCount = np.sum(successVector >= ToWin)
 
-    print(f"successfully won {ToWin}+ seats in " \
-        + str(successCount/testN*100) + "% of " + str(testN) + ' trials')
-    if plot == True:        
+    print(f"successfully won {ToWin}+ seats in " +
+          str(successCount / testN * 100) + "% of " + str(testN) + ' trials')
+    if plot:
         plt.hist(successVector)
         plt.show()
     return successCount
+
 
 if __name__ == '__main__':
     prob_list(plot=True)
