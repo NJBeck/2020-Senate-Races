@@ -129,19 +129,30 @@ def find_combs(n, raceTotalArray=raceTotals):
         # subject to the constraint [3,2,1,1] is just [3,0,0,0]
         # then 2 gets distributed over that which only gives [3,2,0,0]
         distributedArrays = [np.zeros(len(raceTotalArray), dtype=int)]
+        prev_num = 0
         for num in comb:   # example from above: 3 then 2 etc
             tempList = []
             for arr in distributedArrays:
                 # take each array from a distribution then
                 # then distribute the next num then store it in a temp list
                 tempList += distribute(num, raceTotalArray, arr)
-            # after this has been done we replace the distributedArray
-            # and distribute the next number
-            distributedArrays = tempList
+            # if there were no possible distributions we are done
+            
+            # if not tempList:
+            #     break
+            # else:
+            #     tempList = np.array(tempList)
+            # # if we distributed the same num twice we got duplicate arrays
+            if num == prev_num:
+                distributedArrays = list({arr.tostring(): arr for arr in tempList}.values())
+            else:
+                distributedArrays = tempList
+            prev_num = num
         # after this has been done for every numb in a combination
         # we add it to the finalArray
-        finalArray += distributedArrays
-    return np.unique(np.array(finalArray), axis=0)
+        if distributedArrays:
+            finalArray.append(np.array(distributedArrays))
+    return np.vstack(finalArray)
 
 
 def find_prob(n=15, raceTotalArray=raceTotals, raceProbArray=raceProbs,
@@ -248,4 +259,6 @@ def monte_carlo(testN=10000, plot=True, ToWin=15):
 
 
 if __name__ == '__main__':
-    prob_list(plot=True)
+    import timeit
+    print(timeit.timeit("find_combs(22)", setup="from __main__ import find_combs", number=33))
+    # prob_list(plot=True)
