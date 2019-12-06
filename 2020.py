@@ -136,15 +136,12 @@ def find_combs(n, raceTotalArray=raceTotals):
                 # take each array from a distribution then
                 # then distribute the next num then store it in a temp list
                 tempList += distribute(num, raceTotalArray, arr)
-            # if there were no possible distributions we are done
-            
-            # if not tempList:
-            #     break
-            # else:
-            #     tempList = np.array(tempList)
-            # # if we distributed the same num twice we got duplicate arrays
+            # if we distributed the same num twice we got duplicate arrays
             if num == prev_num:
-                distributedArrays = list({arr.tostring(): arr for arr in tempList}.values())
+                # hash np arrays to strings for dict keys then back to a list
+                # this is a fast way of getting the unique arrays from a list 
+                distributedArrays = list({arr.tostring():
+                                          arr for arr in tempList}.values())
             else:
                 distributedArrays = tempList
             prev_num = num
@@ -158,25 +155,28 @@ def find_combs(n, raceTotalArray=raceTotals):
 def find_prob(n=15, raceTotalArray=raceTotals, raceProbArray=raceProbs,
               totalSeats=seatTotal):
     '''
-    as described above the functions above we multiply the binom.pmf()
-    of every number in each array in the array from find_combs
-    we then do this for every number between n and total number
-    of possible seat wins (i.e. all 35)
+    we take the len(raceTotals) by (number of combinations) array
+    we return the probability of winning n races
+    we do this by multiplying the binom.pmf(i, k, p) of every element
+    where i is the element of the array, n is the total seats availabe
+    and p is the probability
+    example: prob of winning 3 solidR seats = binom.pmf(3, 12, .003)
+    then we sum all of those products
     '''
-    finalProb = 0
     combs = find_combs(n, raceTotalArray)
-    combProbArray = []
-    for arr in combs:
-        # take each array of combinations and turn them into probs from binom
-        probList = []
-        for i, raceCount in enumerate(arr):
-            prob = binom.pmf(raceCount, raceTotalArray[i], raceProbArray[i])
-            probList.append(prob)
-        # multiply every binom.pmf in the resulting array append it
-        combProbArray.append(np.prod(np.array(probList)))
-    finalProb += np.sum(np.array(combProbArray))
-    return finalProb
-
+    prob_array_list = []
+    # I actually do this columnwise since the only variable in every column of
+    # combs is the element itself
+    for col in range(len(raceTotalArray)):
+        f = lambda x: binom.pmf(x, raceTotalArray[col], raceProbArray[col])
+        column = combs[:, col]
+        probs = f(column)
+        prob_array_list.append(probs)
+    # here I do the product over the columns again, but this is effectively
+    # the product over the original rows since Im doing this over an array
+    # which came from a list of columns
+    prob_array = np.prod(np.array(prob_array_list), axis=0)
+    return np.sum(prob_array)
 
 def sum_probs(n=15, raceTotalArray=raceTotals,
               raceProbArray=raceProbs, totalSeats=seatTotal):
@@ -259,6 +259,4 @@ def monte_carlo(testN=10000, plot=True, ToWin=15):
 
 
 if __name__ == '__main__':
-    import timeit
-    print(timeit.timeit("find_combs(22)", setup="from __main__ import find_combs", number=33))
-    # prob_list(plot=True)
+    prob_list(plot=True)
